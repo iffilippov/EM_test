@@ -1,10 +1,50 @@
-from __future__ import annotations
 import os
 import pickle
 import time
 
 
+class Credentials():
+    '''Implements Credentials.'''
+
+    def __init__(
+            self,
+            username: str,
+            password: str,
+            domain: str,
+    ):
+        self.username = username
+        self.password = password
+        self.domain = domain
+
+    def __repr__(self):
+        return (
+            f'username - {self.username};'
+            f' password - {self.password};'
+            f' domain - {self.domain}'
+        )
+
+
+class MountPoint():
+    '''Implements MountPoint.'''
+
+    def __init__(
+            self,
+            mount_point_name: str,
+            total_size: int,
+    ):
+        self.mount_point_name = mount_point_name
+        self.total_size = total_size
+
+    def __repr__(self):
+        return (
+            f' mount point name - {self.mount_point_name};'
+            f' total size - {self.total_size} '
+        )
+
+
 class Workload():
+    '''Impements Workload.'''
+
     def __init__(
             self,
             ip: str,
@@ -20,43 +60,20 @@ class Workload():
             raise ValueError('Missing required fields')
 
     def __repr__(self):
-        return f'Workload class IP: {self.ip};\
-                credentials: {self.credentials};\
-                storage: {self.storage}'
-
-
-class Credentials():
-    def __init__(
-            self,
-            username: str,
-            password: str,
-            domain: str,
-    ):
-        self.username = username
-        self.password = password
-        self.domain = domain
-
-    def __repr__(self):
-        return f'Credentials class username: {self.username};\
-                password: {self.password};\
-                domain: {self.domain}'
-
-
-class MountPoint():
-    def __init__(
-            self,
-            mount_point_name: str,
-            total_size: int,
-    ):
-        self.mount_point_name = mount_point_name
-        self.total_size = total_size
-
-    def __repr__(self):
-        return f'MountPoint class mount point name: {self.mount_point_name};\
-                total size: {self.total_size}'
+        return (
+            f'Workloads\n'
+            f'IP: {self.ip};\n'
+            f'Credentials: {self.credentials};\n'
+            f'Storage: {self.storage}'
+        )
 
 
 class Source():
+    '''Implements Source.
+    Not sure for what. It is not used in business logic.
+    Should it be connected/inherited with Workload class
+    and Source object in the Migration class?'''
+
     def __init__(
             self,
             username: str,
@@ -72,9 +89,11 @@ class Source():
         self.ip = ip
 
     def __repr__(self):
-        return f'Source class username: {self.username};\
-                password: {self.password};\
-                ip: {self.ip}'
+        return (
+            f' source username: {self.username};'
+            f' source password: {self.password};'
+            f' source IP: {self.ip};'
+        )
 
     # def change_ip(self, ip):
     #     if ip is None:
@@ -92,8 +111,8 @@ class Source():
     #         raise ValueError
     #     self.__password = password
 
-    def get_ip(self):
-        return self.ip
+    # def get_ip(self):
+    #     return self.ip
 
     # def get_username(self):
     #     return self.__username
@@ -103,8 +122,9 @@ class Source():
 
 
 class MigrationTarget():
+    '''Implements Migration target.'''
 
-    __CLOUD_TYPES: set[str] = {'aws', 'azure', 'vsphere', 'vcloud'}
+    CLOUD_TYPES: set[str] = {'aws', 'azure', 'vsphere', 'vcloud'}
 
     def __init__(
             self,
@@ -112,7 +132,7 @@ class MigrationTarget():
             cloud_credentials: Credentials,
             target_vm: Workload,
     ):
-        if cloud_type in self.__CLOUD_TYPES:
+        if cloud_type in self.CLOUD_TYPES:
             self.__cloud_type = cloud_type
             self.cloud_credentials = cloud_credentials
             self.target_vm = target_vm
@@ -129,12 +149,16 @@ class MigrationTarget():
     #     return self.__cloud_type
 
     def __repr__(self):
-        return f'MigrationTarget class cloud type: {self.__cloud_type};\
-                cloud credentials: {self.cloud_credentials};\
-                target virtual machine: {self.target_vm}'
+        return (
+            f'* cloud type - {self.__cloud_type};\n'
+            f'* cloud credentials: {self.cloud_credentials};\n'
+            f'* target virtual machine:\n'
+            f'{self.target_vm}'
+        )
 
 
 class Migration():
+    '''Implements Migration.'''
 
     __VOLUME_C_BAN: bool = False
 
@@ -180,14 +204,19 @@ class Migration():
         self.migration_state = self.__MIGRATION_STATE[3]
 
     def __repr__(self):
-        return f'Migration class\
-                selected mount points: {self.selected_mount_points};\
-                source: {self.source};\
-                migration target: {self.migration_target};\
-                migration state: {self.migration_state}'
+        return (
+            f'Migrations\n'
+            f'Selected mount points: {self.selected_mount_points};\n'
+            f'Source:\n'
+            f'{self.source};\n'
+            f'Migration target:\n'
+            f'{self.migration_target};\n'
+            f'Migration state: {self.migration_state}\n'
+        )
 
 
 class PersistenceLayer():
+    '''Implements Persistence layer for classes objects.'''
     # https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence
 
     def __init__(self, object_list: list, dumpfile: str):
@@ -210,18 +239,43 @@ class PersistenceLayer():
         with open(self.dumpfile, 'wb') as file:
             pickle.dump(object, file)
 
-    def read_all(self):
+    def read(self):
         with open(self.dumpfile, 'rb') as input:
             self.object_list = pickle.load(input)
         return self.object_list
 
     def update(self):
         new_object_list = self.object_list[:]
-        saved_object_list = self.read_all()
+        saved_object_list = self.read()
         for object in saved_object_list:
             if object not in new_object_list:
                 new_object_list.append(object)
         self.create(new_object_list)
 
-    def delete_all(self):
+    def delete(self):
         os.remove(self.dumpfile)
+
+
+if __name__ == '__main__':
+    test_ip_1 = '192.168.0.1'
+    test_ip_2 = '192.168.1.128'
+    credentials = Credentials('Test_name', 'Test_pass', 'Test_domain')
+    mount_point_1 = MountPoint('C:\\', 100)
+    mount_point_2 = MountPoint('D:\\', 200)
+    storage = [mount_point_1, mount_point_2]
+    workload = Workload(test_ip_1, credentials, storage)
+    # print(credentials)
+    # print(storage)
+    # print(workload)
+
+    cloud_type = 'aws'
+    cloud_credentials = credentials
+    target_vm = workload
+    migration_target = MigrationTarget(
+        cloud_type, cloud_credentials, target_vm
+    )
+    # print(migration_target)
+    selected_mount_points = [mount_point_1]
+    source = Workload(test_ip_2, credentials, selected_mount_points)
+    test_migration = Migration(selected_mount_points, source, migration_target)
+    print(test_migration)
