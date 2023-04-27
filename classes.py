@@ -4,10 +4,7 @@ import time
 
 
 class Credentials():
-    '''Implements Credentials.
-    Different approaches to validate attributes types:
-https://stackoverflow.com/questions/2825452/correct-approach-to-validate-attributes-of-an-instance-of-class
-    '''
+    '''Implements Credentials.'''
 
     def __init__(
             self,
@@ -91,7 +88,7 @@ class Source():
     '''Implements Source.
     Not sure for what. It is not used in business logic.
     Should it be connected/inherited with Workload class
-    and Source object in the Migration class?'''
+    and Source object in the Migration class? TBD'''
 
     def __init__(
             self,
@@ -99,13 +96,20 @@ class Source():
             password: str,
             ip: str,
     ):
-        if ip or username or password is None:
+        if not ip or not username or not password:
             raise ValueError(
                 'Attributes of the Source class cannot be of type None'
             )
-        self.username = username
-        self.password = password
-        self.ip = ip
+        elif (
+            isinstance(username, str)
+            and isinstance(password, str)
+            and isinstance(ip, str)
+        ):
+            self.username = username
+            self.password = password
+            self.ip = ip
+        else:
+            raise TypeError('Wrong attributes types')
 
     def __repr__(self):
         return (
@@ -143,7 +147,7 @@ class Source():
 class MigrationTarget():
     '''Implements Migration target.'''
 
-    CLOUD_TYPES: set[str] = {'aws', 'azure', 'vsphere', 'vcloud'}
+    __CLOUD_TYPES: set[str] = {'aws', 'azure', 'vsphere', 'vcloud'}
 
     def __init__(
             self,
@@ -151,21 +155,20 @@ class MigrationTarget():
             cloud_credentials: Credentials,
             target_vm: Workload,
     ):
-        if cloud_type in self.CLOUD_TYPES:
+        if cloud_type not in self.__CLOUD_TYPES:
+            raise ValueError('Unknown cloud type')
+        elif (
+            isinstance(cloud_credentials, Credentials)
+            and isinstance(target_vm, Workload)
+        ):
             self.__cloud_type = cloud_type
             self.cloud_credentials = cloud_credentials
             self.target_vm = target_vm
         else:
-            raise ValueError('Unknown cloud type')
+            raise TypeError('Wrong attributes types')
 
-    # def change_cloud_type(self, cloud_type):
-    #     if cloud_type in self.__cloud_types:
-    #         self.__cloud_type = cloud_type
-    #     else:
-    #         raise ValueError
-
-    # def get_cloud_type(self):
-    #     return self.__cloud_type
+    def get_cloud_type(self):
+        return self.__cloud_type
 
     def __repr__(self):
         return (
@@ -179,7 +182,7 @@ class MigrationTarget():
 class Migration():
     '''Implements Migration.'''
 
-    __VOLUME_C_BAN: bool = False
+    VOLUME_C_BAN: bool = False
 
     __MIGRATION_STATE: tuple[str] = (
         'not started',
@@ -196,31 +199,37 @@ class Migration():
             source: Workload,
             migration_target: MigrationTarget,
     ):
-        self.selected_mount_points = selected_mount_points
-        self.source = source
-        self.migration_target = migration_target
-        self.migration_state = self.__MIGRATION_STATE[0]
+        if (
+            isinstance(selected_mount_points, list)
+            and all(isinstance(item, MountPoint) is True
+                    for item in selected_mount_points)
+            and isinstance(source, Workload)
+            and isinstance(migration_target, MigrationTarget)
+        ):
+            self.selected_mount_points = selected_mount_points
+            self.source = source
+            self.migration_target = migration_target
+            self.migration_state = self.__MIGRATION_STATE[0]
+        else:
+            raise TypeError('Wrong attributes types')
 
     def run(self):
         self.migration_state = self.__MIGRATION_STATE[1]
 
         ''' Simple implementation of the business logic:
         ban migrations when volume C:\\ is not allowed. '''
-        if self.__VOLUME_C_BAN is True:
+        if self.VOLUME_C_BAN is True:
             self.migration_state = self.__MIGRATION_STATE[2]
-            raise Exception(
-                'Cannot run migration without allowing volume C:\\'
-            )
-
-        self.migration_target.target_vm.ip = self.source.ip
-        self.migration_target.target_vm.credentials =\
-            self.source.credentials
-        self.migration_target.target_vm.storage = [
-            mp for mp in self.source.storage
-            if mp in self.selected_mount_points
-        ]
-        time.sleep(self.SLEEP_TIME)
-        self.migration_state = self.__MIGRATION_STATE[3]
+        else:
+            self.migration_target.target_vm.ip = self.source.ip
+            self.migration_target.target_vm.credentials =\
+                self.source.credentials
+            self.migration_target.target_vm.storage = [
+                mp for mp in self.source.storage
+                if mp in self.selected_mount_points
+            ]
+            time.sleep(self.SLEEP_TIME)
+            self.migration_state = self.__MIGRATION_STATE[3]
 
     def __repr__(self):
         return (
@@ -273,28 +282,3 @@ class PersistenceLayer():
 
     def delete(self):
         os.remove(self.dumpfile)
-
-
-if __name__ == '__main__':
-    test_ip_1 = '192.168.0.1'
-    test_ip_2 = '192.168.1.128'
-    credentials = Credentials('Test_name', 'Test_pass', 'Test_domain')
-    mount_point_1 = MountPoint('C:\\', 100)
-    mount_point_2 = MountPoint('D:\\', 200)
-    storage = [mount_point_1, mount_point_2]
-    workload = Workload(test_ip_1, credentials, storage)
-    # print(credentials)
-    # print(storage)
-    # print(workload)
-
-    cloud_type = 'aws'
-    cloud_credentials = credentials
-    target_vm = workload
-    migration_target = MigrationTarget(
-        cloud_type, cloud_credentials, target_vm
-    )
-    # print(migration_target)
-    selected_mount_points = [mount_point_1]
-    source = Workload(test_ip_2, credentials, selected_mount_points)
-    test_migration = Migration(selected_mount_points, source, migration_target)
-    print(test_migration)
