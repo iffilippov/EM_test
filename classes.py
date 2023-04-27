@@ -4,7 +4,10 @@ import time
 
 
 class Credentials():
-    '''Implements Credentials.'''
+    '''Implements Credentials.
+    Different approaches to validate attributes types:
+https://stackoverflow.com/questions/2825452/correct-approach-to-validate-attributes-of-an-instance-of-class
+    '''
 
     def __init__(
             self,
@@ -12,9 +15,16 @@ class Credentials():
             password: str,
             domain: str,
     ):
-        self.username = username
-        self.password = password
-        self.domain = domain
+        if (
+            isinstance(username, str)
+            and isinstance(password, str)
+            and isinstance(domain, str)
+        ):
+            self.username = username
+            self.password = password
+            self.domain = domain
+        else:
+            raise TypeError('Wrong attributes types')
 
     def __repr__(self):
         return (
@@ -32,8 +42,11 @@ class MountPoint():
             mount_point_name: str,
             total_size: int,
     ):
-        self.mount_point_name = mount_point_name
-        self.total_size = total_size
+        if isinstance(mount_point_name, str) and isinstance(total_size, int):
+            self.mount_point_name = mount_point_name
+            self.total_size = total_size
+        else:
+            raise TypeError('Wrong attributes types')
 
     def __repr__(self):
         return (
@@ -51,13 +64,19 @@ class Workload():
             credentials: Credentials,
             storage: list[MountPoint],
     ):
-        self.ip = ip
-        self.credentials = credentials
-        self.storage = storage
-
-    def validate(self):
-        if not self.ip or not self.credentials or not self.storage:
+        if not ip or not credentials or not storage:
             raise ValueError('Missing required fields')
+        elif (
+            isinstance(ip, str)
+            and isinstance(credentials, Credentials)
+            and isinstance(storage, list)
+            and all(isinstance(item, MountPoint) is True for item in storage)
+        ):
+            self.ip = ip
+            self.credentials = credentials
+            self.storage = storage
+        else:
+            raise TypeError('Wrong attributes types')
 
     def __repr__(self):
         return (
