@@ -265,7 +265,7 @@ class PersistenceLayer():
         #     if len(set(v)) != len(v):
         #         raise ValueError
         with open(self.dumpfile, 'wb') as file:
-            pickle.dump(object, file)
+            pickle.dump(object, file, -1)
 
     def read(self):
         with open(self.dumpfile, 'rb') as input:
@@ -273,12 +273,37 @@ class PersistenceLayer():
         return self.object_list
 
     def update(self):
-        new_object_list = self.object_list[:]
+        new_object_list: list = self.object_list[:]
         saved_object_list = self.read()
         for object in saved_object_list:
             if object not in new_object_list:
                 new_object_list.append(object)
         self.create(new_object_list)
 
-    def delete(self):
+    def delete_object(self, object_to_delete):
+        new_object_list: list = []
+        saved_object_list = self.read()
+        for object in saved_object_list:
+            if str(object) != str(object_to_delete):
+                new_object_list.append(object)
+        self.create(new_object_list)
+
+    def delete_all(self):
         os.remove(self.dumpfile)
+
+
+if __name__ == '__main__':
+    source_1 = Source('user 1', 'pass 1', '192.168.1.1')
+    source_2 = Source('user 2', 'pass 2', '192.168.1.2')
+    object_list = [source_1, source_2]
+    object_list_2 = [
+        Credentials('user', 'pass', 'test domain')
+    ]
+    file = PersistenceLayer(object_list, 'dump.pickle')
+    file.create(object_list)
+    print(f'Initial file \n {file.read()}')
+    update_file = PersistenceLayer(object_list_2, 'dump.pickle').update()
+    print(file.read())
+    file.delete_object(source_1)
+    print(file.read())
+    file.delete_all()
