@@ -1,7 +1,7 @@
 import unittest
 import classes
 # import time
-# import os
+import os
 
 
 class TestCredentials(unittest.TestCase):
@@ -289,26 +289,99 @@ class TestMigration(unittest.TestCase):
 
 
 class TestPersistanceLayer(unittest.TestCase):
-    '''Tess PersistenceLayer class.'''
+    '''Tests PersistenceLayer class.'''
 
-    @classmethod
-    def setUpClass(cls):
-        pass
+    def setUp(self):
+        self.source_1 = classes.Source('user 1', 'pass 1', '192.168.1.1')
+        self.source_2 = classes.Source('user 2', 'pass 2', '192.168.1.2')
+        self.object_to_update_1 = classes.Credentials(
+            'user 3', 'pass 3', 'domain 3'
+        )
+        self.object_to_update_2 = classes.Credentials(
+            'user 4', 'pass 4', 'domain 4'
+        )
+
+        # self.source_1 = 1
+        # self.source_2 = 2
+        # self.object_to_update_1 = 3
+        # self.object_to_update_2 = 4
+
+        self.object_list_1 = [self.source_1, self.source_2]
+        self.object_list_2 = [self.object_to_update_1, self.object_to_update_2]
+        self.file = classes.PersistenceLayer(self.object_list_1, 'dump.pickle')
+
+    # @classmethod
+    # def setUpClass(cls):
+    #     cls.source_1 = classes.Source('user 1', 'pass 1', '192.168.1.1')
+    #     cls.source_2 = classes.Source('user 2', 'pass 2', '192.168.1.2')
+    #     cls.object_to_update_1 = classes.Credentials(
+    #         'user 3', 'pass 3', 'domain 3'
+    #     )
+    #     cls.object_to_update_2 = classes.Credentials(
+    #         'user 4', 'pass 4', 'domain 4'
+    #     )
+
+    #     cls.source_1 = 1
+    #     cls.source_2 = 2
+    #     cls.object_to_update_1 = 3
+    #     cls.object_to_update_2 = 4
+
+    #     cls.object_list_1 = [cls.source_1, cls.source_2]
+    #     cls.object_list_2 = [cls.object_to_update_1, cls.object_to_update_2]
+    #     cls.file = classes.PersistenceLayer(cls.object_list_1, 'dump.pickle')
 
     def test_create_file(self):
-        pass
-
-    def test_read_file(self):
-        pass
-
-    def test_update_file(self):
-        pass
+        self.file.create()
+        self.assertTrue(os.path.exists('dump.pickle'))
 
     def test_delete_file(self):
-        pass
+        self.file.delete_all()
+        self.assertFalse(os.path.exists('dump.pickle'))
 
-    def test_create_same_ip_sources(self):
-        pass
+    def test_read_file(self):
+        self.file.create()
+        read_object = self.file.read()
+        self.assertEqual(str(self.object_list_1), str(read_object))
+        self.file.delete_all()
+
+    def test_update_file_with_object(self):
+        self.file.create()
+        self.file.update_with_object(self.object_to_update_1)
+        read_object = self.file.read()
+        self.assertEqual(
+            str([
+                self.object_list_1[0],
+                self.object_list_1[1],
+                self.object_to_update_1
+            ]),
+            str(read_object)
+        )
+        self.file.delete_all()
+
+    def test_update_file(self):
+        self.file.create()
+        objects_to_update = classes.PersistenceLayer(
+            self.object_list_2, 'dump.pickle'
+        )
+        objects_to_update.update_all()
+        read_object_2 = self.file.read()
+        self.assertEqual(
+            str([
+                self.object_to_update_1,
+                self.object_to_update_2,
+                self.source_1,
+                self.source_2,
+            ]),
+            str(read_object_2)
+        )
+        self.file.delete_all()
+
+    def test_delete_object_from_file(self):
+        self.file.create()
+        object_to_delete = self.source_1
+        self.file.delete_object(object_to_delete)
+        read_object_3 = self.file.read()
+        self.assertEqual(str([self.source_2]), str(read_object_3))
 
 
 if __name__ == '__main__':
