@@ -1,6 +1,6 @@
-## REST API project (test task) for the Python cloud services developer position at Electronic medicine company.
+## Test task for the Python developer position at Electronic Medicine Company.
 
-### Following set of classes, RESTful API and unit tests are implemented
+### Following [set of classes](https://github.com/iffilippov/EM_test/blob/main/classes.py), [classes tests](https://github.com/iffilippov/EM_test/blob/main/test_classes.py), [RESTful API](https://github.com/iffilippov/EM_test/blob/main/server.py) and [API unit tests](https://github.com/iffilippov/EM_test) are implemented.
 
 #### Class Workload that contains following fields:
 * IP - string;
