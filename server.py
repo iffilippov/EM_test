@@ -4,8 +4,6 @@ from blacksheep import Application, Response, Content, FromJSON
 
 import classes
 
-# from pprint import pprint
-
 
 app = Application()
 test_ip: str = '192.168.0.1'
@@ -21,10 +19,14 @@ database_mock: dict = {'workloads': {}, 'migrations': {}}
 
 @app.route("/workload", methods=["GET"])
 async def get_workload():
-    try:
-        print(database_mock['workloads'])
-    except Exception:
-        return Response(404, content=Content(b"text/plain", b"Not Found"))
+    if len(database_mock['workloads']) > 0:
+        return (
+            'Mock database includes',
+            len(database_mock['workloads']),
+            'Workload records'
+        )
+    else:
+        return Response(204, content=Content(b"text/plain", b"No Content"))
 
 
 @app.route("/workload", methods=["POST"])
@@ -49,11 +51,11 @@ async def add_workload(input: FromJSON[dict]):
             )
 
         if not database_mock['workloads']:
-            i = 0
+            id = 1
         else:
-            i = max(database_mock['workloads'].keys()) + 1
+            id = max(database_mock['workloads'].keys()) + 1
 
-        database_mock['workloads'][i] = classes.Workload(
+        database_mock['workloads'][id] = classes.Workload(
             ip,
             credentials,
             storage
@@ -70,9 +72,48 @@ async def add_workload(input: FromJSON[dict]):
         return Response(400, content=Content(b"text/plain", b"Bad Request"))
 
 
-@app.route("/workload/<int:id>", methods=["PUT"])
-async def modify_workload():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+@app.route("/workload/{int:id}", methods=["PUT"])
+async def modify_workload(input: FromJSON[dict], id: int):
+    data = input.value
+    modification_flag: bool = False
+    ip = database_mock['workloads'][id].ip
+
+    if id in database_mock['workloads'].keys():
+        if 'credentials' in data.keys():
+            credentials = classes.Credentials(
+                data['credentials']['username'],
+                data['credentials']['password'],
+                data['credentials']['domain']
+            )
+            modification_flag = True
+
+        if 'storage' in data.keys():
+            storage = []
+            for mount_point in data['storage']:
+                storage.append(classes.MountPoint(
+                    mount_point['name'], int(mount_point['size'])
+                ))
+
+        database_mock['workloads'][id] = classes.Workload(
+            ip,
+            credentials,
+            storage
+        )
+    else:
+        modification_flag = False
+        return Response(404, content=Content(b"text/plain", b"Not Found"))
+
+    if modification_flag is True:
+        # print(database_mock['workloads'][id])
+        return Response(
+            200,
+            content=Content(b"text/plain", b"Workload Modified")
+        )
+    else:
+        return Response(
+            304,
+            content=Content(b"text/plain", b"Not Modified")
+        )
 
 
 @app.route("/workload/<int:id>", methods=["DELETE"])
