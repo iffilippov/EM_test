@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from blacksheep import Application, Response, Content, FromJSON
 
 import classes
@@ -164,11 +162,11 @@ async def add_migration(input: FromJSON[dict]):
             elif workload.ip == data['migration target']['target ip']:
                 target_vm = workload
                 print('target vm accepted')
-            else:
-                return Response(
-                    400,
-                    content=Content(b"text/plain", b"Bad Request")
-                )
+            # else:
+            #     return Response(
+            #         400,
+            #         content=Content(b"text/plain", b"Bad Request")
+            #     )
         try:
             cloud_credentials = classes.Credentials(
                 data['migration target']['cloud credentials']['username'],
@@ -178,6 +176,7 @@ async def add_migration(input: FromJSON[dict]):
             cloud_type: str = data['migration target']['cloud type']
             print('cloud credentials and type accepted')
         except Exception:
+            print('cloud credentials and type not accepted')
             return Response(
                     400,
                     content=Content(b"text/plain", b"Bad Request")
@@ -216,8 +215,99 @@ async def add_migration(input: FromJSON[dict]):
 
 
 @app.route("/migration/<int:id>", methods=["PUT"])
-async def modify_migration():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+async def modify_migration(input: FromJSON[dict], id: int):
+    data = input.value
+    keys: set = {'selected mount points', 'source ip', 'migration target'}
+    modification_flag: bool = False
+
+    if id not in database_mock['workloads'].keys():
+        return Response(404, content=Content(b"text/plain", b"Not Found"))
+    else:
+        migration_to_modify = database_mock['migrations'][id]
+        print('keys accepted')
+
+    # TBD. any or all
+    if any(key in data.keys() for key in keys):
+        if 'selected mount points' in data.keys():
+            selected_mount_points: list = []
+            for mount_point in data['selected mount points']:
+                selected_mount_points.append(
+                    classes.MountPoint(
+                        mount_point['name'],
+                        int(mount_point['size'])
+                    )
+                )
+            migration_to_modify.selected_mount_points = selected_mount_points
+            modification_flag = True
+            print('selected mount points accepted')
+
+        if 'source ip' in data.keys():
+            # source: classes.Workload = None
+            for workload in database_mock['workloads'].values():
+                if workload.ip == data['source ip']:
+                    migration_to_modify.source = workload
+                    modification_flag = True
+                    print('source accepted')
+                    break
+                # else:
+                #     return Response(
+                #         400,
+                #         content=Content(b"text/plain", b"Bad Request")
+                #     )
+        print('I am here')
+        if 'migration target' in data.keys():
+            # target_vm: classes.Workload = None
+            for workload in database_mock['workloads'].values():
+                if workload.ip == data['migration target']['target ip']:
+                    target_vm = workload
+                    print('target vm accepted')
+                    break
+                # else:
+                #     print('Broken here')
+                #     return Response(
+                #         400,
+                #         content=Content(b"text/plain", b"Bad Request")
+                #     )
+            try:
+                cloud_credentials = classes.Credentials(
+                    data['migration target']['cloud credentials']['username'],
+                    data['migration target']['cloud credentials']['password'],
+                    data['migration target']['cloud credentials']['domain']
+                )
+                cloud_type: str = data['migration target']['cloud type']
+                print('cloud credentials and type accepted')
+            except Exception:
+                return Response(
+                        400,
+                        content=Content(b"text/plain", b"Bad Request")
+                    )
+            try:
+                migration_target = classes.MigrationTarget(
+                    cloud_type,
+                    cloud_credentials,
+                    target_vm
+                )
+                print('migration target accepted')
+            except Exception:
+                return Response(
+                        400,
+                        content=Content(b"text/plain", b"Bad Request")
+                    )
+            migration_to_modify.migration_target = migration_target
+            modification_flag = True
+    else:
+        return Response(400, content=Content(b"text/plain", b"Bad Request"))
+
+    if modification_flag is True:
+        return Response(
+            200,
+            content=Content(b"text/plain", b"Migration Modified")
+        )
+    else:
+        return Response(
+            304,
+            content=Content(b"text/plain", b"Migration Not Modified")
+        )
 
 
 @app.route("/migration/<int:id>", methods=["DELETE"])
