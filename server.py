@@ -104,7 +104,6 @@ async def modify_workload(input: FromJSON[dict], id: int):
         return Response(404, content=Content(b"text/plain", b"Not Found"))
 
     if modification_flag is True:
-        # print(database_mock['workloads'][id])
         return Response(
             200,
             content=Content(b"text/plain", b"Workload Modified")
@@ -117,18 +116,103 @@ async def modify_workload(input: FromJSON[dict], id: int):
 
 
 @app.route("/workload/<int:id>", methods=["DELETE"])
-async def delete_workload():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+async def delete_workload(id: int):
+    if id in database_mock['workloads'].keys():
+        del database_mock['workloads'][id]
+        return Response(
+            200,
+            content=Content(b"text/plain", b"Workload Deleted")
+        )
+    else:
+        return Response(404, content=Content(b"text/plain", b"Not Found"))
 
 
 @app.route("/migration", methods=["GET"])
 async def get_migration():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+    if len(database_mock['migrations']) > 0:
+        return (
+            'Mock database includes',
+            len(database_mock['migrations']),
+            'Migrations records'
+        )
+    else:
+        return Response(204, content=Content(b"text/plain", b"No Content"))
 
 
 @app.route("/migration", methods=["POST"])
-async def add_migration():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+async def add_migration(input: FromJSON[dict]):
+    data = input.value
+    keys: set = {'selected mount points', 'source ip', 'migration target'}
+
+    if all(key in data.keys() for key in keys):
+        selected_mount_points: list = []
+        print('all keys accepted')
+        for mount_point in data['selected mount points']:
+            selected_mount_points.append(
+                classes.MountPoint(
+                    mount_point['name'],
+                    int(mount_point['size'])
+                )
+            )
+        source: classes.Workload = None
+        target_vm: classes.Workload = None
+        print('source and target_vm init')
+        for workload in database_mock['workloads'].values():
+            if workload.ip == data['source ip']:
+                source = workload
+                print('source accepted')
+            elif workload.ip == data['migration target']['target ip']:
+                target_vm = workload
+                print('target vm accepted')
+            else:
+                return Response(
+                    400,
+                    content=Content(b"text/plain", b"Bad Request")
+                )
+        try:
+            cloud_credentials = classes.Credentials(
+                data['migration target']['cloud credentials']['username'],
+                data['migration target']['cloud credentials']['password'],
+                data['migration target']['cloud credentials']['domain']
+            )
+            cloud_type: str = data['migration target']['cloud type']
+            print('cloud credentials and type accepted')
+        except Exception:
+            return Response(
+                    400,
+                    content=Content(b"text/plain", b"Bad Request")
+                )
+        try:
+            migration_target = classes.MigrationTarget(
+                cloud_type,
+                cloud_credentials,
+                target_vm
+            )
+            print('migration target accepted')
+        except Exception:
+            return Response(
+                    400,
+                    content=Content(b"text/plain", b"Bad Request")
+                )
+        if not database_mock['migrations']:
+            id = 1
+        else:
+            id = max(database_mock['migrations'].keys()) + 1
+
+        database_mock['migrations'][id] = classes.Migration(
+            selected_mount_points,
+            source,
+            migration_target
+        )
+        return Response(
+            201,
+            content=Content(
+                b"text/plain",
+                b"Migration record succesfully created"
+            )
+        )
+    else:
+        return Response(400, content=Content(b"text/plain", b"Bad Request"))
 
 
 @app.route("/migration/<int:id>", methods=["PUT"])
@@ -137,15 +221,60 @@ async def modify_migration():
 
 
 @app.route("/migration/<int:id>", methods=["DELETE"])
-async def delete_migration():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+async def delete_migration(id: int):
+    if id in database_mock['migrations'].keys():
+        del database_mock['migrations'][id]
+        return Response(
+            200,
+            content=Content(b"text/plain", b"Migration Deleted")
+        )
+    else:
+        return Response(
+            404,
+            content=Content(b"text/plain", b"Migration Not Found")
+        )
 
 
 @app.route("/migration/<int:id>/run", methods=["GET"])
-async def run_migration():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+async def run_migration(id: int):
+    if id in database_mock['migrations'].keys():
+        database_mock['migrations'][id].run()
+        return Response(
+            200,
+            content=Content(b"text/plain", b"Migration Started")
+        )
+    else:
+        return Response(
+            404,
+            content=Content(b"text/plain", b"Migration Not Found")
+        )
 
 
 @app.route("/migration/<int:id>/status", methods=["GET"])
-async def check_migration_status():
-    return f"Hello, World! {datetime.utcnow().isoformat()}"
+async def check_migration_status(id: int):
+    if id in database_mock['migrations'].keys():
+        if database_mock['migrations'][id].migration_state == 'not started':
+            return Response(
+                200,
+                content=Content(b"text/plain", b"Migration Not Started")
+            )
+        elif database_mock['migrations'][id].migration_state == 'running':
+            return Response(
+                200,
+                content=Content(b"text/plain", b"Migration Running")
+            )
+        elif database_mock['migrations'][id].migration_state == 'success':
+            return Response(
+                200,
+                content=Content(b"text/plain", b"Migration Finished")
+            )
+        else:
+            return Response(
+                500,
+                content=Content(b"text/plain", b"Migration Error")
+            )
+    else:
+        return Response(
+            404,
+            content=Content(b"text/plain", b"Migration Not Found")
+        )
