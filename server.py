@@ -4,13 +4,6 @@ import classes
 
 
 app = Application()
-test_ip: str = '192.168.0.1'
-test_credentials = classes.Credentials('user', 'password', 'domain')
-test_mount_point_1 = classes.MountPoint('C:\\', 100)
-test_mount_point_2 = classes.MountPoint('D:\\', 200)
-test_storage = [test_mount_point_1, test_mount_point_2]
-test_workload = classes.Workload(test_ip, test_credentials, test_storage)
-workload_list = [test_workload]
 
 database_mock: dict = {'workloads': {}, 'migrations': {}}
 
@@ -74,9 +67,11 @@ async def add_workload(input: FromJSON[dict]):
 async def modify_workload(input: FromJSON[dict], id: int):
     data = input.value
     modification_flag: bool = False
-    ip = database_mock['workloads'][id].ip
-
     if id in database_mock['workloads'].keys():
+        ip = database_mock['workloads'][id].ip
+        credentials = database_mock['workloads'][id].credentials
+        storage = database_mock['workloads'][id].storage
+
         if 'credentials' in data.keys():
             credentials = classes.Credentials(
                 data['credentials']['username'],
@@ -91,17 +86,16 @@ async def modify_workload(input: FromJSON[dict], id: int):
                 storage.append(classes.MountPoint(
                     mount_point['name'], int(mount_point['size'])
                 ))
+            modification_flag = True
+    else:
+        return Response(404, content=Content(b"text/plain", b"Not Found"))
 
+    if modification_flag is True:
         database_mock['workloads'][id] = classes.Workload(
             ip,
             credentials,
             storage
         )
-    else:
-        modification_flag = False
-        return Response(404, content=Content(b"text/plain", b"Not Found"))
-
-    if modification_flag is True:
         return Response(
             200,
             content=Content(b"text/plain", b"Workload Modified")
@@ -213,13 +207,12 @@ async def modify_migration(input: FromJSON[dict], id: int):
     keys: set = {'selected mount points', 'source ip', 'migration target'}
     modification_flag: bool = False
 
-    if id not in database_mock['workloads'].keys():
+    if id not in database_mock['migrations'].keys():
         return Response(404, content=Content(b"text/plain", b"Not Found"))
     else:
         migration_to_modify = database_mock['migrations'][id]
 
-    # TBD. any or all
-    if any(key in data.keys() for key in keys):
+    if all(key in data.keys() for key in keys):
         if 'selected mount points' in data.keys():
             selected_mount_points: list = []
             for mount_point in data['selected mount points']:

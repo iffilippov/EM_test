@@ -118,31 +118,6 @@ class Source():
             f' source IP: {self.ip};'
         )
 
-    # def change_ip(self, ip):
-    #     if ip is None:
-    #         raise ValueError
-    #     if self.__change_ip_possible:
-    #         self.__ip = ip
-
-    # def change_username(self, username):
-    #     if username is None:
-    #         raise ValueError
-    #     self.__username = username
-
-    # def change_password(self, password):
-    #     if password is None:
-    #         raise ValueError
-    #     self.__password = password
-
-    # def get_ip(self):
-    #     return self.ip
-
-    # def get_username(self):
-    #     return self.__username
-
-    # def get_password(self):
-    #     return self.__password
-
 
 class MigrationTarget():
     '''Implements Migration target.'''
@@ -245,7 +220,6 @@ class Migration():
 
 class PersistenceLayer():
     '''Implements Persistence layer for classes objects.'''
-    # https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence
 
     def __init__(self, object_list: list, dumpfile: str):
         self.object_list = object_list

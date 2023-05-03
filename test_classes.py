@@ -6,7 +6,7 @@ import os
 class TestCredentials(unittest.TestCase):
     '''Tests Credentials class.'''
 
-    def test_attributes_types(self):
+    def test_01_attributes_types(self):
         self.assertRaises(
             TypeError, classes.Credentials, 1111, 'test_pass', 'test_domain')
         self.assertRaises(
@@ -14,7 +14,7 @@ class TestCredentials(unittest.TestCase):
         self.assertRaises(
             TypeError, classes.Credentials, 'test_username', 'test_pass', 1111)
 
-    def test_correct_credentials(self):
+    def test_02_correct_credentials(self):
         credentials = classes.Credentials('test_user', 'test_pass', 'test_dom')
         self.assertEqual(credentials.username, 'test_user')
         self.assertEqual(credentials.password, 'test_pass')
@@ -24,11 +24,11 @@ class TestCredentials(unittest.TestCase):
 class TestMountPoint(unittest.TestCase):
     '''Tests MountPoint class.'''
 
-    def test_attributes_types(self):
+    def test_01_attributes_types(self):
         self.assertRaises(TypeError, classes.MountPoint, 1, 111)
         self.assertRaises(TypeError, classes.MountPoint, 'C:\\', '111')
 
-    def test_correct_mount_point(self):
+    def test_02_correct_mount_point(self):
         mount_point = classes.MountPoint('C:\\', 111)
         self.assertEqual(mount_point.mount_point_name, 'C:\\')
         self.assertEqual(mount_point.total_size, 111)
@@ -49,7 +49,7 @@ class TestWorkload(unittest.TestCase):
             cls.TEST_IP, cls.credentials, cls.storage
         )
 
-    def test_attributes_not_none(self):
+    def test_01_attributes_not_none(self):
         self.assertRaises(
             ValueError,
             classes.Workload,
@@ -72,7 +72,7 @@ class TestWorkload(unittest.TestCase):
             None
         )
 
-    def test_attributes_types(self):
+    def test_02_attributes_types(self):
         self.assertRaises(
             TypeError,
             classes.Workload,
@@ -102,7 +102,7 @@ class TestWorkload(unittest.TestCase):
             [1, 2, 3]
         )
 
-    def test_correct_workload(self):
+    def test_03_correct_workload(self):
         self.assertEqual(self.workload.ip, self.TEST_IP)
         self.assertEqual(self.workload.credentials, self.credentials)
         self.assertEqual(self.workload.storage, self.storage)
@@ -115,7 +115,7 @@ class TestSource(unittest.TestCase):
     TEST_PASSWORD: str = 'test_password'
     TEST_IP: str = '192.168.0.1'
 
-    def test_attributes_not_none(self):
+    def test_01_attributes_not_none(self):
         self.assertRaises(
             ValueError,
             classes.Source,
@@ -138,7 +138,7 @@ class TestSource(unittest.TestCase):
             None
         )
 
-    def test_attributes_types(self):
+    def test_02_attributes_types(self):
         self.assertRaises(
             TypeError, classes.Source, 1111, self.TEST_PASSWORD, self.TEST_IP)
         self.assertRaises(
@@ -148,7 +148,7 @@ class TestSource(unittest.TestCase):
             self.TEST_USERNAME, self.TEST_PASSWORD, 1111
         )
 
-    def test_correct_credentials(self):
+    def test_03_correct_credentials(self):
         source = classes.Source(
             self.TEST_USERNAME, self.TEST_PASSWORD, self.TEST_IP
         )
@@ -175,14 +175,14 @@ class TestMigrationTarget(unittest.TestCase):
             cls.TEST_IP, cls.cloud_credentials, cls.storage
         )
 
-    def test_cloud_type_not_in_set(self):
+    def test_01_cloud_type_not_in_set(self):
         self.assertRaises(ValueError,
                           classes.MigrationTarget,
                           'test_cloud',
                           self.cloud_credentials,
                           self.target_vm)
 
-    def test_attributes_types(self):
+    def test_02_attributes_types(self):
         self.assertRaises(
             TypeError,
             classes.MigrationTarget,
@@ -198,7 +198,7 @@ class TestMigrationTarget(unittest.TestCase):
             self.storage
         )
 
-    def test_correct_migration_target(self):
+    def test_03_correct_migration_target(self):
         migration_target = classes.MigrationTarget(
             self.CLOUD_TYPE, self.cloud_credentials, self.target_vm
         )
@@ -241,7 +241,7 @@ class TestMigration(unittest.TestCase):
             cls.selected_mount_points, cls.source, cls.migration_target
         )
 
-    def test_attributes_types(self):
+    def test_01_attributes_types(self):
         self.assertRaises(
             TypeError,
             classes.Migration,
@@ -271,7 +271,7 @@ class TestMigration(unittest.TestCase):
             self.target_vm
         )
 
-    def test_correct_migration(self):
+    def test_02_correct_migration(self):
         self.assertEqual(self.test_migration.selected_mount_points,
                          self.selected_mount_points)
         self.assertEqual(self.test_migration.source, self.source)
@@ -281,7 +281,7 @@ class TestMigration(unittest.TestCase):
         self.assertEqual(self.migration_target.target_vm.storage,
                          self.selected_mount_points)
 
-    def test_migration_volume_c_is_not_allowed(self):
+    def test_03_migration_volume_c_is_not_allowed(self):
         self.test_migration.VOLUME_C_BAN = True
         self.test_migration.run()
         self.assertEqual(self.test_migration.migration_state, 'error')
@@ -299,51 +299,25 @@ class TestPersistanceLayer(unittest.TestCase):
         self.object_to_update_2 = classes.Credentials(
             'user 4', 'pass 4', 'domain 4'
         )
-
-        # self.source_1 = 1
-        # self.source_2 = 2
-        # self.object_to_update_1 = 3
-        # self.object_to_update_2 = 4
-
         self.object_list_1 = [self.source_1, self.source_2]
         self.object_list_2 = [self.object_to_update_1, self.object_to_update_2]
         self.file = classes.PersistenceLayer(self.object_list_1, 'dump.pickle')
 
-    # @classmethod
-    # def setUpClass(cls):
-    #     cls.source_1 = classes.Source('user 1', 'pass 1', '192.168.1.1')
-    #     cls.source_2 = classes.Source('user 2', 'pass 2', '192.168.1.2')
-    #     cls.object_to_update_1 = classes.Credentials(
-    #         'user 3', 'pass 3', 'domain 3'
-    #     )
-    #     cls.object_to_update_2 = classes.Credentials(
-    #         'user 4', 'pass 4', 'domain 4'
-    #     )
-
-    #     cls.source_1 = 1
-    #     cls.source_2 = 2
-    #     cls.object_to_update_1 = 3
-    #     cls.object_to_update_2 = 4
-
-    #     cls.object_list_1 = [cls.source_1, cls.source_2]
-    #     cls.object_list_2 = [cls.object_to_update_1, cls.object_to_update_2]
-    #     cls.file = classes.PersistenceLayer(cls.object_list_1, 'dump.pickle')
-
-    def test_create_file(self):
+    def test_01_create_file(self):
         self.file.create()
         self.assertTrue(os.path.exists('dump.pickle'))
 
-    def test_delete_file(self):
+    def test_02_delete_file(self):
         self.file.delete_all()
         self.assertFalse(os.path.exists('dump.pickle'))
 
-    def test_read_file(self):
+    def test_03_read_file(self):
         self.file.create()
         read_object = self.file.read()
         self.assertEqual(str(self.object_list_1), str(read_object))
         self.file.delete_all()
 
-    def test_update_file_with_object(self):
+    def test_04_update_file_with_object(self):
         self.file.create()
         self.file.update_with_object(self.object_to_update_1)
         read_object = self.file.read()
@@ -357,7 +331,7 @@ class TestPersistanceLayer(unittest.TestCase):
         )
         self.file.delete_all()
 
-    def test_update_file(self):
+    def test_05_update_file(self):
         self.file.create()
         objects_to_update = classes.PersistenceLayer(
             self.object_list_2, 'dump.pickle'
@@ -375,12 +349,13 @@ class TestPersistanceLayer(unittest.TestCase):
         )
         self.file.delete_all()
 
-    def test_delete_object_from_file(self):
+    def test_06_delete_object_from_file(self):
         self.file.create()
         object_to_delete = self.source_1
         self.file.delete_object(object_to_delete)
         read_object_3 = self.file.read()
         self.assertEqual(str([self.source_2]), str(read_object_3))
+        self.file.delete_all()
 
 
 if __name__ == '__main__':
