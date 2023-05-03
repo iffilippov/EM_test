@@ -1,6 +1,42 @@
 ## Test task for the Python developer position at Electronic Medicine Company.
 
-### Following [set of classes](https://github.com/iffilippov/EM_test/blob/main/classes.py), [classes tests](https://github.com/iffilippov/EM_test/blob/main/test_classes.py), [RESTful API](https://github.com/iffilippov/EM_test/blob/main/server.py) and [API unit tests](https://github.com/iffilippov/EM_test) are implemented.
+### Getting started with the project
+
+Clone the project
+```
+https://github.com/iffilippov/EM_test.git
+```
+
+Prepare and activate virtual environment in the project directory
+```
+python -m venv venv
+```
+```
+source venv/Scripts/activate
+```
+
+Install requirements from the requirements.txt
+```
+pip install -r requirements.txt
+```
+
+Start the API server
+```
+uvicorn server:app --port 44777 --reload
+```
+
+Run unit tests
+
+for classes
+```
+python -m unittest -v test_classes.py
+```
+for API server
+```
+python -m unittest -v test_server.py
+```
+
+### Following [set of classes](https://github.com/iffilippov/EM_test/blob/main/classes.py), [classes tests](https://github.com/iffilippov/EM_test/blob/main/test_classes.py), [RESTful API](https://github.com/iffilippov/EM_test/blob/main/server.py) and [API unit tests](https://github.com/iffilippov/EM_test/blob/main/test_server.py) are implemented.
 
 #### Class Workload that contains following fields:
 * IP - string;
