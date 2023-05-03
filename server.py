@@ -144,7 +144,6 @@ async def add_migration(input: FromJSON[dict]):
 
     if all(key in data.keys() for key in keys):
         selected_mount_points: list = []
-        print('all keys accepted')
         for mount_point in data['selected mount points']:
             selected_mount_points.append(
                 classes.MountPoint(
@@ -154,19 +153,16 @@ async def add_migration(input: FromJSON[dict]):
             )
         source: classes.Workload = None
         target_vm: classes.Workload = None
-        print('source and target_vm init')
         for workload in database_mock['workloads'].values():
             if workload.ip == data['source ip']:
                 source = workload
-                print('source accepted')
             elif workload.ip == data['migration target']['target ip']:
                 target_vm = workload
-                print('target vm accepted')
-            # else:
-            #     return Response(
-            #         400,
-            #         content=Content(b"text/plain", b"Bad Request")
-            #     )
+        if not source or not target_vm:
+            return Response(
+                400,
+                content=Content(b"text/plain", b"Bad Request")
+            )
         try:
             cloud_credentials = classes.Credentials(
                 data['migration target']['cloud credentials']['username'],
@@ -174,9 +170,7 @@ async def add_migration(input: FromJSON[dict]):
                 data['migration target']['cloud credentials']['domain']
             )
             cloud_type: str = data['migration target']['cloud type']
-            print('cloud credentials and type accepted')
         except Exception:
-            print('cloud credentials and type not accepted')
             return Response(
                     400,
                     content=Content(b"text/plain", b"Bad Request")
@@ -187,7 +181,6 @@ async def add_migration(input: FromJSON[dict]):
                 cloud_credentials,
                 target_vm
             )
-            print('migration target accepted')
         except Exception:
             return Response(
                     400,
@@ -224,7 +217,6 @@ async def modify_migration(input: FromJSON[dict], id: int):
         return Response(404, content=Content(b"text/plain", b"Not Found"))
     else:
         migration_to_modify = database_mock['migrations'][id]
-        print('keys accepted')
 
     # TBD. any or all
     if any(key in data.keys() for key in keys):
@@ -239,35 +231,32 @@ async def modify_migration(input: FromJSON[dict], id: int):
                 )
             migration_to_modify.selected_mount_points = selected_mount_points
             modification_flag = True
-            print('selected mount points accepted')
 
         if 'source ip' in data.keys():
-            # source: classes.Workload = None
+            source: classes.Workload = None
             for workload in database_mock['workloads'].values():
                 if workload.ip == data['source ip']:
-                    migration_to_modify.source = workload
+                    source = workload
                     modification_flag = True
-                    print('source accepted')
                     break
-                # else:
-                #     return Response(
-                #         400,
-                #         content=Content(b"text/plain", b"Bad Request")
-                #     )
-        print('I am here')
+            migration_to_modify.source = source
+            if not source:
+                return Response(
+                    400,
+                    content=Content(b"text/plain", b"Bad Request")
+                )
+
         if 'migration target' in data.keys():
-            # target_vm: classes.Workload = None
+            target_vm: classes.Workload = None
             for workload in database_mock['workloads'].values():
                 if workload.ip == data['migration target']['target ip']:
                     target_vm = workload
-                    print('target vm accepted')
                     break
-                # else:
-                #     print('Broken here')
-                #     return Response(
-                #         400,
-                #         content=Content(b"text/plain", b"Bad Request")
-                #     )
+            if not target_vm:
+                return Response(
+                    400,
+                    content=Content(b"text/plain", b"Bad Request")
+                )
             try:
                 cloud_credentials = classes.Credentials(
                     data['migration target']['cloud credentials']['username'],
@@ -275,7 +264,6 @@ async def modify_migration(input: FromJSON[dict], id: int):
                     data['migration target']['cloud credentials']['domain']
                 )
                 cloud_type: str = data['migration target']['cloud type']
-                print('cloud credentials and type accepted')
             except Exception:
                 return Response(
                         400,
@@ -287,7 +275,6 @@ async def modify_migration(input: FromJSON[dict], id: int):
                     cloud_credentials,
                     target_vm
                 )
-                print('migration target accepted')
             except Exception:
                 return Response(
                         400,
